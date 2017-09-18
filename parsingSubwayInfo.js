@@ -4,7 +4,7 @@ const request = require('request');
 let domain = 'http://subway.koreatriptips.com/';
 let mainPageUrl = `${domain}subway-station.html`;
 
-parsingFirstStep(mainPageUrl).then(result => {
+parsingUrl(mainPageUrl).then(result => {
   return parsingTwoStep(result);
 }).then(result => {
   let list = [];
@@ -18,7 +18,7 @@ parsingFirstStep(mainPageUrl).then(result => {
   console.error(err);
 });
 
-function parsingFirstStep(url) {
+function parsingUrl(url) {
   return new Promise((resolve, reject) => {
     request(url, (err, response, body) => {
       if (err) reject(err);
@@ -28,8 +28,7 @@ function parsingFirstStep(url) {
       let result = [];
 
       for (let i = 0 ; i < contentList.length ; i++) {
-        let href = contentList.eq(i).find('a').attr('href');
-        result.push(href);
+        result.push(contentList.eq(i).find('a').attr('href'));
       }
       resolve(result);
     });
@@ -39,23 +38,8 @@ function parsingFirstStep(url) {
 function parsingTwoStep(list) {
   let result = [];
   for (let i in list) {
-    result.push(
-      new Promise((resolve, reject) => {
-        request(`${domain}${list[i]}`, (err, response, body) => {
-          if (err) reject(err);
-          
-          let $ = cheerio.load(body);
-          let contentList = $('.content ul li');
-          let result2 = [];
-
-          for (let i = 0 ; i < contentList.length ; i++) {
-            let href = contentList.eq(i).find('a').attr('href');
-            result2.push(href);
-          }
-          resolve(result2);
-        })
-      })
-    )
+    let byLinePageUrl = `${domain}${list[i]}`;
+    result.push(parsingUrl(byLinePageUrl));
   }
   return Promise.all(result);
 }
