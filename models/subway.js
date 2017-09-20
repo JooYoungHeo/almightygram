@@ -4,7 +4,7 @@ let Schema = mongoose.Schema;
 let subwaySchema = new Schema({
   date: String,
   day: String,
-  line: Number,
+  line: String,
   station: String,
   upTrain: Schema.Types.Mixed,
   downTrain: Schema.Types.Mixed,
