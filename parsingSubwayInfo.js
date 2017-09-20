@@ -6,82 +6,103 @@ let {Subway} = require(path.join(process.cwd(), 'models'));
 let domain = 'http://subway.koreatriptips.com/';
 let mainPageUrl = `${domain}subway-station.html`;
 
-// parsingUrl(mainPageUrl).then(result => {
-//   return parsingTwoStep(result);
-// }).then(result => {
-//   let list = [];
-//   for (let i in result) {
-//     for (let j in result[i]) {
-//       list.push(result[i][j]);
-//     }
-//   }
-//   console.log(list);
-// }).catch(err => {
-//   console.error(err);
-// });
-//
-// function parsingUrl(url) {
-//   return new Promise((resolve, reject) => {
-//     request(url, (err, response, body) => {
-//       if (err) reject(err);
-//
-//       let $ = cheerio.load(body);
-//       let contentList = $('.content ul li');
-//       let result = [];
-//
-//       for (let i = 0 ; i < contentList.length ; i++) {
-//         result.push(contentList.eq(i).find('a').attr('href'));
-//       }
-//       resolve(result);
-//     });
-//   });
-// }
-//
-// function parsingTwoStep(list) {
-//   let result = [];
-//   for (let i in list) {
-//     let byLinePageUrl = `${domain}${list[i]}`;
-//     result.push(parsingUrl(byLinePageUrl));
-//   }
-//   return Promise.all(result);
-// }
+parsingUrl(mainPageUrl)
+.then(result => parsingTwoStep(result))
+.then(result => removeArrayDepth(result))
+.then(result => {
+  for (let i in result) {
+    let url = `${domain}${result[i].href}`;
+    let line = result[i].line;
+    let station = result[i].station;
 
-let url = `${domain}/subway-station/SES01/SES1907.html`;
+    request(url, (err, response, body) => {
+      if(err) reject(err);
 
-request(url, (err, response, body) => {
-  if(err) reject(err);
+      let $ = cheerio.load(body);
+      let tableList = $('table.table');
+      let titleList = $('.box-title');
+      let startEndObject = {};
+      let upTimetableObject = {};
+      let downTimetableObject = {};
+      let exitInfoObject = {};
+      let busInfoObject = {};
 
-  let $ = cheerio.load(body);
-  let tableList = $('table.table');
-  let titleList = $('.box-title');
-  let startEndObject = {};
-  let upTimetableObject = {};
-  let downTimetableObject = {};
-  let exitInfoObject = {};
-  let busInfoObject = {};
+      for (let i = 0 ; i < tableList.length ; i++) {
+        let eachTable = tableList.eq(i);
+        let title = titleList.eq(i).text();
+        let tr = eachTable.find('tr');
+        let td = eachTable.find('td');
+        let flag = judgeTitle(title);
 
-  for (let i = 0 ; i < tableList.length ; i++) {
-    let eachTable = tableList.eq(i);
-    let title = titleList.eq(i).text();
-    let tr = eachTable.find('tr');
-    let td = eachTable.find('td');
-    let flag = judgeTitle(title);
+        if (flag === 0) {
+          startEndObject = parsingStartEnd(tr, td);
+        } else if (flag === 1) {
+          upTimetableObject = parsingTimetable(flag, td);
+        } else if (flag === 2) {
+          downTimetableObject = parsingTimetable(flag, td);
+        } else if (flag === 3) {
+          exitInfoObject = parsingInfo(td);
+        } else if (flag === 4) {
+          busInfoObject = parsingInfo(td);
+        }
+      }
 
-    if (flag === 0) {
-      startEndObject = parsingStartEnd(tr, td);
-    } else if (flag === 1) {
-      upTimetableObject = parsingTimetable(flag, td);
-    } else if (flag === 2) {
-      downTimetableObject = parsingTimetable(flag, td);
-    } else if (flag === 3) {
-      exitInfoObject = parsingInfo(td);
-    } else if (flag === 4) {
-      busInfoObject = parsingInfo(td);
-    }
+      createDocuments(line, station, startEndObject, upTimetableObject, downTimetableObject, exitInfoObject, busInfoObject);
+    });
   }
-
-  createDocuments(startEndObject, upTimetableObject, downTimetableObject, exitInfoObject, busInfoObject);
+}).catch(err => {
+  console.error(err);
 });
+
+function parsingUrl(url) {
+  return new Promise((resolve, reject) => {
+    request(url, (err, response, body) => {
+      if (err) reject(err);
+
+      let $ = cheerio.load(body);
+      let contentList = $('.content ul li');
+      let result = [];
+
+      for (let i = 0 ; i < contentList.length ; i++) {
+        result.push({
+          text: contentList.eq(i).find('a').text(),
+          href: contentList.eq(i).find('a').attr('href')
+        });
+      }
+      resolve(result);
+    });
+  });
+}
+
+function parsingTwoStep(list) {
+  let result = [];
+  for (let i in list) {
+    let byLinePageUrl = `${domain}${list[i].href}`;
+    result.push(
+      Promise.all([
+        {line: list[i].text}, parsingUrl(byLinePageUrl)
+      ])
+    );
+  }
+  return Promise.all(result);
+}
+
+function removeArrayDepth(list) {
+  return new Promise((resolve, reject) => {
+    let result = [];
+    for (let i in list) {
+      let infoList = list[i][1];
+      for (let j in infoList) {
+        result.push({
+          line: list[i][0].line,
+          station: infoList[j].text,
+          href: infoList[j].href
+        });
+      }
+    }
+    resolve(result);
+  });
+}
 
 function judgeTitle(title) {
   return (title.indexOf('첫차') >= 0)? 0: (title.indexOf('상행') >= 0)? 1:
@@ -132,15 +153,15 @@ function parsingInfo(td) {
   return jsonObject;
 }
 
-function createDocuments(startEndObj, upObj, downObj, exitObj, busObj) {
+function createDocuments(line, station, startEndObj, upObj, downObj, exitObj, busObj) {
   let item = new Subway();
   let date = new Date();
   let weekday = ['Sun', 'Mon', 'Tues', 'Wednes', 'Thurs', 'Fri', 'Satur'];
 
   item.date = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
   item.day = `${weekday[date.getDay()]}day`;
-  item.line = 1;
-  item.station = '가능';
+  item.line = line;
+  item.station = station;
   item.upTrain = {
     first: startEndObj.up.first,
     last: startEndObj.up.last,
