@@ -1,6 +1,8 @@
 const cheerio = require('cheerio');
 const request = require('request');
+const path = require('path');
 
+let {Subway} = require(path.join(process.cwd(), 'models'));
 let domain = 'http://subway.koreatriptips.com/';
 let mainPageUrl = `${domain}subway-station.html`;
 
@@ -52,6 +54,11 @@ request(url, (err, response, body) => {
   let $ = cheerio.load(body);
   let tableList = $('table.table');
   let titleList = $('.box-title');
+  let startEndObject = {};
+  let upTimetableObject = {};
+  let downTimetableObject = {};
+  let exitInfoObject = {};
+  let busInfoObject = {};
 
   for (let i = 0 ; i < tableList.length ; i++) {
     let eachTable = tableList.eq(i);
@@ -61,15 +68,19 @@ request(url, (err, response, body) => {
     let flag = judgeTitle(title);
 
     if (flag === 0) {
-      let startEndObject = parsingStartEnd(tr, td);
-    } else if (flag === 1 || flag === 2) {
-      let timetableObject = parsingTimetable(flag, td);
+      startEndObject = parsingStartEnd(tr, td);
+    } else if (flag === 1) {
+      upTimetableObject = parsingTimetable(flag, td);
+    } else if (flag === 2) {
+      downTimetableObject = parsingTimetable(flag, td);
     } else if (flag === 3) {
-      let exitInfoObject = parsingInfo(td);
+      exitInfoObject = parsingInfo(td);
     } else if (flag === 4) {
-      let busInfoObject = parsingInfo(td);
+      busInfoObject = parsingInfo(td);
     }
   }
+
+  createDocuments(startEndObject, upTimetableObject, downTimetableObject, exitInfoObject, busInfoObject);
 });
 
 function judgeTitle(title) {
@@ -119,4 +130,31 @@ function parsingInfo(td) {
     jsonObject[num] = info.split(',');
   }
   return jsonObject;
+}
+
+function createDocuments(startEndObj, upObj, downObj, exitObj, busObj) {
+  let item = new Subway();
+  let date = new Date();
+  let weekday = ['Sun', 'Mon', 'Tues', 'Wednes', 'Thurs', 'Fri', 'Satur'];
+
+  item.date = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
+  item.day = `${weekday[date.getDay()]}day`;
+  item.line = 1;
+  item.station = '가능';
+  item.upTrain = {
+    first: startEndObj.up.first,
+    last: startEndObj.up.last,
+    timetable: upObj.up
+  };
+  item.downTrain = {
+    first: startEndObj.down.first,
+    last: startEndObj.down.last,
+    timetable: downObj.down
+  };
+  item.exitInfo = exitObj;
+  item.busInfo = busObj;
+
+  item.save(err => {
+    if (err) console.error(err);
+  })
 }
