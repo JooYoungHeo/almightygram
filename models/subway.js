@@ -9,7 +9,8 @@ let subwaySchema = new Schema({
   upTrain: Schema.Types.Mixed,
   downTrain: Schema.Types.Mixed,
   exitInfo: Schema.Types.Mixed,
-  busInfo: Schema.Types.Mixed
+  busInfo: Schema.Types.Mixed,
+  type: String
 });
 
 module.exports = mongoose.model('Subway', subwaySchema);
