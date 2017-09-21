@@ -16,14 +16,17 @@ parsingUrl(mainPageUrl)
     let station = result[i].station;
 
     request(url, (err, response, body) => {
-      if(err) reject(err);
+      if(err) {
+        console.log(`${url} - ${err}`);
+        return;
+      }
 
       let $ = cheerio.load(body);
       let tableList = $('table.table');
       let titleList = $('.box-title');
-      let startEndObject = {};
-      let upTimetableObject = {};
-      let downTimetableObject = {};
+      let startEndObject = {up: {first: '', last: ''}, down: {first: '', last: ''}};
+      let upTimetableObject = {up: {}};
+      let downTimetableObject = {down: {}};
       let exitInfoObject = {};
       let busInfoObject = {};
 
@@ -46,7 +49,6 @@ parsingUrl(mainPageUrl)
           busInfoObject = parsingInfo(td);
         }
       }
-
       createDocuments(line, station, startEndObject, upTimetableObject, downTimetableObject, exitInfoObject, busInfoObject);
     });
   }
@@ -174,6 +176,7 @@ function createDocuments(line, station, startEndObj, upObj, downObj, exitObj, bu
   };
   item.exitInfo = exitObj;
   item.busInfo = busObj;
+  item.type = 'subway';
 
   item.save(err => {
     if (err) console.error(err);
