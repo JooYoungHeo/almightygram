@@ -7,8 +7,6 @@ let {Subway} = require(path.join(process.cwd(), 'models'));
 const bot = new Telebot(token);
 
 bot.on('text', (msg) => {
-
-
   return find(msg.text).then(result => {
     let infoList = refineData(result);
     for (let i in infoList) {
