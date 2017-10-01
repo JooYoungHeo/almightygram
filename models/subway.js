@@ -2,14 +2,10 @@ const mongoose = require('mongoose');
 
 let Schema = mongoose.Schema;
 let subwaySchema = new Schema({
-  date: String,
-  day: String,
   line: String,
   station: String,
-  upTrain: Schema.Types.Mixed,
-  downTrain: Schema.Types.Mixed,
-  exitInfo: Schema.Types.Mixed,
-  busInfo: Schema.Types.Mixed,
+  timeTable: Schema.Types.Mixed,
+  abbreviation: String,
   type: String
 });
 
