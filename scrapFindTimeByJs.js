@@ -28,9 +28,45 @@ request(url, (err, res, body) => {
 
       dayType = dayTypeList[j];
 
-      let timetable = table.children().eq(1).children().text();
+      let thead = table.children().eq(0).children().eq(0).children();
+      let directions = [thead.eq(0).text(), thead.eq(2).text()];
+      let timetable = table.children().eq(1).children();
+      let timeObject = makeTimeObject(dayType, directions, timetable);
 
-
+      // create docs
     }
   }
 });
+
+function makeTimeObject(dayType, directions, timetable) {
+  let timeObject = {};
+  timeObject[dayType] = {};
+  timeObject[dayType][directions[0]] = {};
+  timeObject[dayType][directions[1]] = {};
+
+  for (let i = 0 ; i < timetable.length ; i++) {
+    let tds = timetable.eq(i).children();
+    let upTrain = refineMinutes(tds.eq(0).text());
+    let time = tds.eq(1).text();
+    let downTrain = refineMinutes(tds.eq(2).text());
+
+    timeObject[dayType][directions[0]][time] = upTrain;
+    timeObject[dayType][directions[1]][time] = downTrain;
+  }
+  return timeObject;
+}
+
+function refineMinutes(timeText) {
+  let list = timeText.split(' ');
+  let refineList = [];
+
+  for (let i = 0 ; i < list.length - 1 ; i++) {
+    if (list[i].indexOf('(') >= 0) continue;
+    if (list[i+1].indexOf('(') >= 0) {
+      refineList.push([list[i], list[i+1]]);
+    } else {
+      refineList.push([list[i], '-']);
+    }
+  }
+  return refineList;
+}
