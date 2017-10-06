@@ -1,5 +1,7 @@
 let cheerio = require('cheerio');
 let request = require('request');
+let path = require('path');
+let {Subway} = require(path.join(process.cwd(), 'models'));
 
 let url = 'http://www.findtime.co.kr/3%ED%98%B8%EC%84%A0-%EB%82%A8%EB%B6%80%ED%84%B0%EB%AF%B8%EB%84%90%EC%97%AD-%EC%8B%9C%EA%B0%84%ED%91%9C-%EC%B2%AB%EC%B0%A8%EB%A7%89%EC%B0%A8-%EC%8B%9C%EA%B0%84%ED%8F%AC%ED%95%A8/';
 
@@ -14,6 +16,7 @@ let abbreviation = '남터역';
 request(url, (err, res, body) => {
   let $ = cheerio.load(body);
   let tables = $('.type01');
+  let timeList = [];
 
   for (let i = 0 ; i < tables.length ; i++) {
     let table = tables.eq(i);
@@ -33,9 +36,10 @@ request(url, (err, res, body) => {
       let timetable = table.children().eq(1).children();
       let timeObject = makeTimeObject(dayType, directions, timetable);
 
-      // create docs
+      timeList.push(timeObject);
     }
   }
+  createDocuments(line, station, timeList, abbreviation, type);
 });
 
 function makeTimeObject(dayType, directions, timetable) {
@@ -69,4 +73,18 @@ function refineMinutes(timeText) {
     }
   }
   return refineList;
+}
+
+function createDocuments(line, station, timeTable, abbreviation, type) {
+  let item = new Subway();
+
+  item.line = line;
+  item.station = station;
+  item.timeTable = timeTable;
+  item.abbreviation = abbreviation;
+  item.type = 'subway';
+
+  item.save(err => {
+    if (err) console.error(err);
+  })
 }
