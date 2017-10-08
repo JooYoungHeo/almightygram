@@ -102,5 +102,3 @@ function getDay() {
   let day = new Date().getDay();
   return (day === 0)? 2: (day === 6)? 1: 0;
 }
-
-//todo : 시간값 리턴에 행선지 붙이기, 데이터 파싱 다시하기, 마지막 시간 후 에러처리 추가
