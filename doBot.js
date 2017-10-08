@@ -25,7 +25,10 @@ bot.start();
 function find(station) {
   return new Promise((resolve, reject) => {
     Subway.find({
-      $or: [{'station': station}, {'station': `${station}역`}]
+      $or: [{'station': station},
+            {'station': `${station}역`}, 
+            {'abbreviation': station},
+            {'abbreviation': `${station}역`}]
     }).exec((err, item) => {
       if (err) reject(err);
       resolve(item);
