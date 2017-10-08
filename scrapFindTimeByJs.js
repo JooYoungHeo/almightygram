@@ -64,7 +64,11 @@ function refineMinutes(timeText) {
   let list = timeText.split(' ');
   let refineList = [];
 
-  for (let i = 0 ; i < list.length - 1 ; i++) {
+  for (let i = 0 ; i < list.length ; i++) {
+    if (i === (list.length - 1)) {
+      if (list[i].indexOf('(') < 0) refineList.push([list[i], '-']);
+      break;
+    }
     if (list[i].indexOf('(') >= 0) continue;
     if (list[i+1].indexOf('(') >= 0) {
       refineList.push([list[i], list[i+1]]);
@@ -86,5 +90,6 @@ function createDocuments(line, station, timeTable, abbreviation, type) {
 
   item.save(err => {
     if (err) console.error(err);
+    console.log(`${line}-${station} create done`);
   })
 }
