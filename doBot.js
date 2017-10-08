@@ -55,14 +55,16 @@ function refineTimeList(timeList) {
 
   for (let i in directionKeys) {
     let schedule = timetable[directionKeys[i]];
-    let answer = getTime(schedule);
-    answerList.push(`${directionKeys[i]}:${answer}분 후`);
+    let answer = getTimeAndDest(schedule);
+    let dest = (answer.dest === '-')? '': answer.dest;
+    let mention = (answer.remainTime === '')? '도착정보가 없습니다': `${answer.remainTime}분 후 ${dest}`;
+    answerList.push(`${directionKeys[i]}:${mention}`);
   }
 
   return answerList.join(' / ');
 }
 
-function getTime(schedule) {
+function getTimeAndDest(schedule) {
   let date = new Date();
   let hour = formattingTime(date.getHours());
   let nextHour = formattingTime(date.getHours() + 1);
@@ -70,21 +72,26 @@ function getTime(schedule) {
   let minutes = schedule[hour];
   let nextMinutes = schedule[nextHour];
   let flag = false;
-  let returnValue = 0;
+  let remainTime = '';
+  let dest = '-';
+
+  if (minutes === undefined) return {remainTime: remainTime, dest: dest};
 
   for (let i in minutes) {
     if (Number(minutes[i][0]) > nowMinute) {
-      returnValue = Number(minutes[i][0]) - nowMinute;
+      remainTime = Number(minutes[i][0]) - nowMinute;
+      dest = minutes[i][1];
       flag = true;
       break;
     }
   }
 
-  if (!flag) {
-    returnValue = Number(nextMinutes[0][0]) + 60 - nowMinute;
+  if (!flag && (nextMinutes !== undefined)) {
+    remainTime = Number(nextMinutes[0][0]) + 60 - nowMinute;
+    dest = nextMinutes[0][1];
   }
 
-  return returnValue;
+  return {remainTime: remainTime, dest: dest};
 }
 
 function formattingTime(d) {
