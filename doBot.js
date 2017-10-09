@@ -26,7 +26,7 @@ function find(station) {
   return new Promise((resolve, reject) => {
     Subway.find({
       $or: [{'station': station},
-            {'station': `${station}역`}, 
+            {'station': `${station}역`},
             {'abbreviation': station},
             {'abbreviation': `${station}역`}]
     }).exec((err, item) => {
@@ -60,8 +60,9 @@ function refineTimeList(timeList) {
     let schedule = timetable[directionKeys[i]];
     let answer = getTimeAndDest(schedule);
     let dest = (answer.dest === '-')? '': answer.dest;
-    let mention = (answer.remainTime === '')? '도착정보가 없습니다': `${answer.remainTime}분 후 ${dest}`;
-    answerList.push(`${directionKeys[i]}:${mention}`);
+    let mention = (answer.remainTime === '')? '도착정보가 없습니다':
+                  (answer.remainTime === 0)? '곧 도착': `${answer.remainTime}분 후 ${dest}`;
+    answerList.push(`${directionKeys[i]}: ${mention}`);
   }
 
   return answerList.join(' / ');
@@ -81,7 +82,7 @@ function getTimeAndDest(schedule) {
   if (minutes === undefined) return {remainTime: remainTime, dest: dest};
 
   for (let i in minutes) {
-    if (Number(minutes[i][0]) > nowMinute) {
+    if (Number(minutes[i][0]) >= nowMinute) {
       remainTime = Number(minutes[i][0]) - nowMinute;
       dest = minutes[i][1];
       flag = true;
