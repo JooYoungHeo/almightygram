@@ -6,8 +6,6 @@ let {StationTimeInfo} = require(path.join(process.cwd(), 'models'));
 
 const bot = new Telebot(token);
 
-let dayTypeList = ['WD', 'SD', 'HD'];
-
 bot.on('text', (msg) => {
   return find(msg.text).then(result => {
     let infoList = refineData(result);
@@ -24,8 +22,10 @@ bot.on('text', (msg) => {
 bot.start();
 
 function find(station) {
+  let day = getDayInfo();
   return new Promise((resolve, reject) => {
     StationTimeInfo.find({
+      dailyType: day,
       $or: [{'stationName': station},
             {'stationName': `${station}역`},
             {'abbreviation': station},
@@ -71,4 +71,9 @@ function getInfo(timeList) {
 
 function formattingTime(d) {
   return (d < 10)? '0' + d.toString(): d.toString();
+}
+
+function getDayInfo() {
+  let day = new Date().getDay();
+  return (day === 0)? '03': (day === 6)? '02': '01';
 }
