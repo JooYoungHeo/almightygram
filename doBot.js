@@ -2,6 +2,8 @@ let config = require('./config');
 let Telebot = require('telebot');
 let token = config.telegram.token;
 let path = require('path');
+let fs = require('fs');
+let lineDirName = 'lines';
 let {StationTimeInfo} = require(path.join(process.cwd(), 'models'));
 
 const bot = new Telebot(token);
@@ -41,10 +43,12 @@ function refineData(items) {
 
   for (let i in items) {
     let item = items[i];
+    let nextStation = getNextStation(item.line, item.stationName, item.upDownType);
+    let line = item.line;
     let info = getInfo(item.timeTable);
     let remainTime = (info.remainText !== undefined)? info.remainText: '';
     let endStName = (info.endStationName !== undefined)? info.endStationName: '';
-    infoList.push(`${item.line} ${item.stationName} - ${item.upDownType} : ${remainTime} (${endStName})`);
+    infoList.push(`${item.line} ${item.stationName} - ${nextStation} 방면 : ${remainTime} (${endStName})`);
   }
 
   return infoList;
@@ -94,4 +98,15 @@ function convertStringToTime(time) {
   let minute = time.slice(2,4);
   let second = time.slice(4,6);
   return Number(hour * 3600) + Number(minute * 60) + Number(second);
+}
+
+function getNextStation(line, stationName, upDownType) {
+  let stList = fs.readFileSync(`${lineDirName}/${line}.txt`, 'utf-8').split('\n');
+
+  stList.pop();
+
+  let index = stList.indexOf(stationName);
+  let nextIndex = (upDownType === 'U')? index + 1: index - 1;
+  
+  return (stList[nextIndex] === undefined)? stList[index]: stList[nextIndex];
 }
