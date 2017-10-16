@@ -65,7 +65,7 @@ function getInfo(timeList) {
   for (let i in timeList) {
     let item = timeList[i];
     if (Number(time) < Number(item.depTime)) {
-      returnValue = {endStationName: item.endStationName, remainText: convertRemainTime(time, item.depTime)};
+      returnValue = {endStationName: `${item.endStationName}행`, remainText: convertRemainTime(time, item.depTime)};
       break;
     }
   }
@@ -107,6 +107,6 @@ function getNextStation(line, stationName, upDownType) {
 
   let index = stList.indexOf(stationName);
   let nextIndex = (upDownType === 'U')? index + 1: index - 1;
-  
+
   return (stList[nextIndex] === undefined)? stList[index]: stList[nextIndex];
 }
