@@ -42,7 +42,7 @@ function refineData(items) {
   for (let i in items) {
     let item = items[i];
     let info = getInfo(item.timeTable);
-    let remainTime = (info.depTime !== undefined)? info.depTime: '';
+    let remainTime = (info.remainText !== undefined)? info.remainText: '';
     let endStName = (info.endStationName !== undefined)? info.endStationName: '';
     infoList.push(`${item.line} ${item.stationName} - ${item.upDownType} : ${remainTime} (${endStName})`);
   }
@@ -61,7 +61,7 @@ function getInfo(timeList) {
   for (let i in timeList) {
     let item = timeList[i];
     if (Number(time) < Number(item.depTime)) {
-      returnValue = item;
+      returnValue = {endStationName: item.endStationName, remainText: convertRemainTime(time, item.depTime)};
       break;
     }
   }
@@ -76,4 +76,22 @@ function formattingTime(d) {
 function getDayInfo() {
   let day = new Date().getDay();
   return (day === 0)? '03': (day === 6)? '02': '01';
+}
+
+function convertRemainTime(now, dep) {
+  let remainTime = convertStringToTime(dep) - convertStringToTime(now);
+  let hourText = (remainTime > 3600)? `${Math.floor(remainTime/3600)}시간`:'';
+  remainTime %= 3600;
+  let minuteText = (remainTime > 60)? `${Math.floor(remainTime/60)}분`:'';
+  remainTime %= 60;
+  let secondText = `${remainTime}초`;
+
+  return `${hourText}${minuteText}${secondText} 후 출발`;
+}
+
+function convertStringToTime(time) {
+  let hour = time.slice(0,2);
+  let minute = time.slice(2,4);
+  let second = time.slice(4,6);
+  return Number(hour * 3600) + Number(minute * 60) + Number(second);
 }
