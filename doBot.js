@@ -56,7 +56,7 @@ function refineData(items) {
     let info = getInfo(item.timeTable);
     let remainTime = (info.remainText !== undefined)? info.remainText: '';
     let endStName = (info.endStationName !== undefined)? info.endStationName: '';
-    infoList.push(` - ${nextStation} 방면 : ${remainTime} (${endStName})`);
+    infoList.push(` - ${endStName}(${nextStation} 방면) : ${remainTime}`);
   }
 
   return infoList;
