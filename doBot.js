@@ -10,13 +10,14 @@ const bot = new Telebot(token);
 
 bot.on('text', (msg) => {
   return find(msg.text).then(result => {
-    // let infoList = refineData(result);
-    // for (let i in infoList) {
-    //   bot.sendMessage(msg.from.id, infoList[i]);
-    // }
-    // return;
-    console.log(JSON.stringify(result));
-    return bot.sendMessage(msg.from.id, result.length);
+    for (let i in result) {
+      let infoList = refineData(result[i].subways);
+      bot.sendMessage(msg.from.id, `${result[i]._id} ${result[i].subways[0].stationName}`)
+      for (let j in infoList) {
+        bot.sendMessage(msg.from.id, infoList[j]);
+      }
+    }
+    return;
   }).catch(err => {
     console.error(err);
     return bot.sendMessage(msg.from.id, '뭔가 잘못되었다.');
@@ -52,11 +53,10 @@ function refineData(items) {
   for (let i in items) {
     let item = items[i];
     let nextStation = getNextStation(item.line, item.stationName, item.upDownType);
-    let line = item.line;
     let info = getInfo(item.timeTable);
     let remainTime = (info.remainText !== undefined)? info.remainText: '';
     let endStName = (info.endStationName !== undefined)? info.endStationName: '';
-    infoList.push(`${item.line} ${item.stationName} - ${nextStation} 방면 : ${remainTime} (${endStName})`);
+    infoList.push(` - ${nextStation} 방면 : ${remainTime} (${endStName})`);
   }
 
   return infoList;
