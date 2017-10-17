@@ -10,11 +10,13 @@ const bot = new Telebot(token);
 
 bot.on('text', (msg) => {
   return find(msg.text).then(result => {
-    let infoList = refineData(result);
-    for (let i in infoList) {
-      bot.sendMessage(msg.from.id, infoList[i]);
-    }
-    return;
+    // let infoList = refineData(result);
+    // for (let i in infoList) {
+    //   bot.sendMessage(msg.from.id, infoList[i]);
+    // }
+    // return;
+    console.log(JSON.stringify(result));
+    return bot.sendMessage(msg.from.id, result.length);
   }).catch(err => {
     console.error(err);
     return bot.sendMessage(msg.from.id, '뭔가 잘못되었다.');
@@ -26,13 +28,19 @@ bot.start();
 function find(station) {
   let day = getDayInfo();
   return new Promise((resolve, reject) => {
-    StationTimeInfo.find({
-      dailyType: day,
-      $or: [{'stationName': station},
-            {'stationName': `${station}역`},
-            {'abbreviation': station},
-            {'abbreviation': `${station}역`}]
-    }).exec((err, item) => {
+    StationTimeInfo.aggregate(
+      [{
+        $match: {
+          dailyType: day,
+          $or: [{stationName: station},
+            {stationName: `${station}역`},
+            {abbreviation: station},
+            {abbreviation: `${station}역`}]
+        }
+      }, {
+        $group: { _id: '$line', subways: {$push: '$$ROOT'}}
+      }]
+    ).exec((err, item) => {
       err? reject(err): resolve(item);
     });
   });
