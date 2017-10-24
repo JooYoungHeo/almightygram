@@ -3,7 +3,6 @@ let Telebot = require('telebot');
 let token = config.telegram.token;
 let path = require('path');
 let fs = require('fs');
-let async = require('async');
 let lineDirName = 'lines';
 let {StationTimeInfo} = require(path.join(process.cwd(), 'models'));
 
@@ -11,27 +10,14 @@ const bot = new Telebot(token);
 
 bot.on('text', (msg) => {
   return find(msg.text).then(result => {
-    // for (let i in result) {
-    //   let infoList = refineData(result[i].subways);
-    //   bot.sendMessage(msg.from.id, `${result[i]._id} ${result[i].subways[0].stationName}`)
-    //   for (let j in infoList) {
-    //     bot.sendMessage(msg.from.id, infoList[j]);
-    //   }
-    // }
-    // return;
-    async.eachSeries(result, (stationInfo, cb1) => {
-      let infoList = refineData(stationInfo.subways);
-      bot.sendMessage(msg.from.id, `${stationInfo._id} ${stationInfo.subways[0].stationName}`);
-
-      async.eachSeries(infoList, (timeInfo, cb2) => {
-        bot.sendMessage(msg.from.id, timeInfo);
-        cb2();
-      }, err => {
-        cb1();
-      });
-    }, err => {
-      return;
-    });
+    for (let i in result) {
+      let infoList = refineData(result[i].subways);
+      bot.sendMessage(msg.from.id, `${result[i]._id} ${result[i].subways[0].stationName}`)
+      for (let j in infoList) {
+        bot.sendMessage(msg.from.id, infoList[j]);
+      }
+    }
+    return;
   }).catch(err => {
     console.error(err);
     return bot.sendMessage(msg.from.id, '뭔가 잘못되었다.');
